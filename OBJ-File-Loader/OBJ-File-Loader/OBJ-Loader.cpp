@@ -6,6 +6,12 @@
 
 using namespace std;
 
+
+Model::~Model()
+{
+	vertices.clear();
+}
+
 int Model::modelInit(char * filename)
 {
 	HRESULT res = OBJParse(filename);
@@ -22,7 +28,7 @@ HRESULT Model::OBJParse(char* filename)
 {
 	ifstream inFile;
 	string line, v = "v", vt = "vt", vn = "vn", f = "f";
-	unsigned int vc = 0, vtc = 0, vnc = 0, fc = 0;
+	unsigned int lineCount = 0;
 
 	vector< D3DXVECTOR4 > vs;
 	vector< D3DXVECTOR3 > vns;
@@ -37,10 +43,12 @@ HRESULT Model::OBJParse(char* filename)
 	}
 	while (getline(inFile, line)) // we get a new line to process, here.
 	{
-		size_t location = 0;
-		size_t origLoc = location;
 		istringstream streamLine(line);
 		string token;
+
+		if (++lineCount == 33){
+			lineCount = lineCount;
+		}
 
 		streamLine >> token;
 
@@ -65,11 +73,55 @@ HRESULT Model::OBJParse(char* filename)
 			streamLine >> norm.z;
 			vns.push_back(norm);
 		}
+		else if (token == f)
+		{
+			int vInd, tInd = 0, nInd = 0;
 
+
+			while (streamLine.good())
+			{
+				VERTEX vInfo;
+
+				string chunk;
+				string empty = "";  //this empty string is basically to cover the case where
+				char dummy;			//there is whitespace after the data.
+				streamLine >> chunk;
+
+				if (chunk == empty) continue;
+
+				istringstream streamChunk(chunk);
+
+				streamChunk >> vInd;
+				vInfo.vert = vs[vInd - 1];
+
+				streamChunk >> dummy;
+				if (vts.size() != 0){
+					streamChunk >> tInd;
+					vInfo.texCoords = vts[tInd - 1];
+				}
+
+				streamChunk >> dummy;
+				if (vns.size() != 0){
+					streamChunk >> nInd;
+					vInfo.norm = vns[nInd - 1];
+				}
+
+
+				vertices.push_back(vInfo);
+
+			}
+		}
+
+		
 	}
 
 
+
 	inFile.close();
+
+	vs.clear();
+	vts.clear();
+	vns.clear();
 
 	return S_OK;
 }
