@@ -5,7 +5,7 @@
 
 struct VERTEX
 {
-	D3DXVECTOR4 vert, color;
+	D3DXVECTOR4 vert;
 	D3DXVECTOR3 norm;
 	D3DXVECTOR2 texCoords;
 };
@@ -14,11 +14,11 @@ struct VERTEX
 class Model {
 
 	public:
+		std::vector< VERTEX > vertices;
 		Model(){};
 		~Model();
 		int modelInit(char * filename);
 
 	private:
-		std::vector< VERTEX > vertices;
 		HRESULT OBJParse(char * filename);
 };

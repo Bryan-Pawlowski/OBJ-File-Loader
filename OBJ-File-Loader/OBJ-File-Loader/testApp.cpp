@@ -26,8 +26,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//test for open success
 	testModel = new Model;
-	testModel->modelInit("cube.obj");
-	if (testModel == NULL) MessageBox(HWND_DESKTOP, L"Could not find or open the cube.obj test file.", L"Test2", MB_OK);
+	int res = testModel->modelInit("cube.obj");
+	if (res == 1) MessageBox(HWND_DESKTOP, L"Could not find or open the cube.obj test file.", L"Test2", MB_OK);
+
 	delete testModel;
 
 
