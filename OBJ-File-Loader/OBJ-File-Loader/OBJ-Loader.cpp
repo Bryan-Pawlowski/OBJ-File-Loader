@@ -9,11 +9,12 @@ using namespace std;
 
 Model::~Model()
 {
-	vertices.clear();
+	vertices->clear();
 }
 
 int Model::modelInit(char * filename)
 {
+	vertices = new vector< VERTEX >();
 	HRESULT res = OBJParse(filename);
 	if (res == S_FALSE)
 	{
@@ -107,7 +108,7 @@ HRESULT Model::OBJParse(char* filename)
 				}
 
 
-				vertices.push_back(vInfo);
+				vertices->push_back(vInfo);
 
 			}
 		}

@@ -14,7 +14,7 @@ struct VERTEX
 class Model {
 
 	public:
-		std::vector< VERTEX > vertices;
+		std::vector< VERTEX > *vertices;
 		Model(){};
 		~Model();
 		int modelInit(char * filename);
