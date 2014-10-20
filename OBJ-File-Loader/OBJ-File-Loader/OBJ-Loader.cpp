@@ -10,6 +10,7 @@ using namespace std;
 Model::~Model()
 {
 	vertices->clear();
+	delete[] vertices;
 }
 
 int Model::modelInit(char * filename)
@@ -125,4 +126,9 @@ HRESULT Model::OBJParse(char* filename)
 	vns.clear();
 
 	return S_OK;
+}
+
+unsigned int Model::getSize()
+{
+	return vertices->size();
 }

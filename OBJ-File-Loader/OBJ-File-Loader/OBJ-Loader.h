@@ -18,6 +18,7 @@ class Model {
 		Model(){};
 		~Model();
 		int modelInit(char * filename);
+		unsigned int getSize();
 
 	private:
 		HRESULT OBJParse(char * filename);
