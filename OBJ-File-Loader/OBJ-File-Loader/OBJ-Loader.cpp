@@ -10,7 +10,7 @@ using namespace std;
 Model::~Model()
 {
 	vertices->clear();
-	delete[] vertices;
+	delete vertices;
 }
 
 int Model::modelInit(char * filename)

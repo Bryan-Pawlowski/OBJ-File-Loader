@@ -14,10 +14,28 @@
 
 using namespace std;
 
+void createModelTests(void);
+int testDX(HINSTANCE hInstance, int nCmdShow, );
+LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	
-	
+	/*----------Test that we can create a model----------*/
+	createModelTests();
+	/*-----------We can now create a model---------------*/
+
+
+	/*----------Test use of model in DirectX-------------*/
+
+
+
+
+
+	return 0;
+}
+
+void createModelTests(void)
+{
 	//test for correct failure
 	Model *testModel = new Model;
 	int fail = testModel->modelInit("null.obj");
@@ -30,9 +48,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	if (res == 1) MessageBox(HWND_DESKTOP, L"Could not find or open the cube.obj test file.", L"Test2", MB_OK);
 
 	delete testModel;
-
-
-
-	return 0;
 }
-
