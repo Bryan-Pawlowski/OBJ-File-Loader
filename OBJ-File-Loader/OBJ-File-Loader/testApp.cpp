@@ -10,6 +10,8 @@
 #include <iostream>
 #include <windows.h>
 #include <windowsx.h>
+#include <sstream>
+#include <string>
 #include "OBJ-loader.h"
 
 using namespace std;
@@ -17,6 +19,10 @@ using namespace std;
 void createModelTests(void);
 int testDX( HINSTANCE hInstance, int nCmdShow );
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+
+#define SCREEN_WIDTH	500
+#define SCREEN_HEIGHT	400
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -55,14 +61,18 @@ int testDX(HINSTANCE hInstance, int nCmdShow)
 
 	//create window and use the result as the handle for our window.
 
+	RECT wr = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+
+	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+
 	hWnd = CreateWindowEx(	NULL,
 							L"WindowClass1",
 							L"DX Model Loader Test",
 							WS_OVERLAPPEDWINDOW,
 							300,
 							300,
-							500,
-							400,
+							wr.right - wr.left,
+							wr.bottom - wr.top,
 							NULL,
 							NULL,
 							hInstance,  //handle for our app
@@ -109,7 +119,7 @@ void createModelTests(void)
 	//test for open success
 	testModel = new Model;
 	int res = testModel->modelInit("cube.obj");
-	if (res == 1) MessageBox(HWND_DESKTOP, L"Could not find or open the cube.obj test file.", L"Test2", MB_OK);
+	if (res == 1) MessageBox(HWND_DESKTOP, L"Could not find or open the cube.obj test file.", L"Test2", MB_OK);	
 
 	delete testModel;
 }
