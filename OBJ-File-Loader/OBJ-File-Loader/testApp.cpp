@@ -8,6 +8,7 @@
 #pragma comment (lib, "d3dx10.lib")
 
 #include <iostream>
+#include <memory>
 #include <windows.h>
 #include <windowsx.h>
 #include <sstream>
@@ -28,6 +29,12 @@ ID3D11VertexShader * pVS;
 ID3D11PixelShader * pPS;
 ID3D11Buffer *pVBuffer;
 ID3D11InputLayout *pLayout;
+ID3D11Buffer *pCBuffer;
+ID3D11Buffer *pIBuffer;
+ID3D11Buffer *pVBuffer2;
+
+bool modelTest = false;
+unsigned int modelSize;
 
 //prototypes
 void createModelTests(void);
@@ -43,6 +50,16 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 #define SCREEN_WIDTH	800
 #define SCREEN_HEIGHT	600
 
+
+struct CBUFFER
+{
+	D3DXMATRIX Final;
+	D3DXMATRIX Rotation;
+	D3DXVECTOR4 LightVector;
+	D3DXCOLOR LightColor;
+	D3DXCOLOR AmbientColor;
+};
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	/*----------Test that we can create a model----------*/
@@ -54,6 +71,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	testDX(hInstance, nCmdShow);
 
+	/*If we make it this far, we know that DX works, especially if we see a proper image of our loaded model.*/
 
 	return 0;
 }
@@ -134,6 +152,17 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				PostQuitMessage(0);
 				return 0;
 		} break;
+		case WM_CHAR:
+		{
+			switch (wParam)
+			{
+				case 's':
+					modelTest = !modelTest;
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 
@@ -151,7 +180,7 @@ void createModelTests(void)
 		exit(EXIT_FAILURE);
 	}
 	delete testModel;
-	//ZeroMemory(testModel, sizeof(Model));
+
 	//test for open success
 	testModel = new Model;
 	int res = testModel->modelInit("cube.obj");
@@ -211,30 +240,82 @@ void InitD3D(HWND hWnd)
 	devcon->RSSetViewports(1, &viewport);
 }
 
-void CleanD3D() //Release all of our COM objects.
+void CleanD3D(void) //Release all of our COM objects.
 {
 	swapchain->SetFullscreenState(FALSE, NULL);
 
-	swapchain->Release();
-	dev->Release();
-	devcon->Release();
-	backbuffer->Release();
-	pPS->Release();
-	pVS->Release();
-
+	if (swapchain) swapchain->Release();
+	if (dev) dev->Release();
+	if (devcon) devcon->Release();
+	if (backbuffer) backbuffer->Release();
+	if (pPS) pPS->Release();
+	if (pVS) pVS->Release();
+	if (pCBuffer) pCBuffer->Release();
+	if (pLayout) pLayout->Release();
+	if (pVBuffer) pVBuffer->Release();
+	if (pVBuffer2) pVBuffer2->Release();
+	if (pIBuffer) pIBuffer->Release();
 }
 
 void RenderFrame(void)
 {
+
+	CBUFFER cBuffer;
+	D3DXMATRIX matRotate, matView, matProjection, matFinal;
+
+	static float Time = 0.0f;
+	Time += 0.0003f;
+
+	cBuffer.LightVector = D3DXVECTOR4(0.75f, 0.5f, 1.0f, 0.0f);
+	cBuffer.LightColor = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
+	cBuffer.AmbientColor = D3DXCOLOR(0.2f, 0.2f, 0.2f, 1.0f);
+
+	//world matrix
+	D3DXMatrixRotationY(&matRotate, Time);
+
+	// create a view matrix
+	D3DXMatrixLookAtLH(&matView,
+		&D3DXVECTOR3(0.0f, 3.0f, 5.0f),   // the camera position
+		&D3DXVECTOR3(0.0f, 0.0f, 0.0f),    // the look-at position
+		&D3DXVECTOR3(0.0f, 1.0f, 0.0f));   // the up direction
+
+	// create a projection matrix
+	D3DXMatrixPerspectiveFovLH(&matProjection,
+		(FLOAT)D3DXToRadian(45),                    // field of view
+		(FLOAT)SCREEN_WIDTH / (FLOAT)SCREEN_HEIGHT, // aspect ratio
+		1.0f,                                       // near view-plane
+		100.0f);
+
+	matFinal = matRotate * matView * matProjection;
+	cBuffer.Final = matFinal;
+	cBuffer.Rotation = matRotate;
+
+
+	devcon->VSSetConstantBuffers(0, 1, &pCBuffer);
+
 	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
 
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
-	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 
-	devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	if (!modelTest) {
 
-	devcon->Draw(3, 0);
+		devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+		devcon->IASetIndexBuffer(pIBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		devcon->UpdateSubresource(pCBuffer, 0, 0, &cBuffer, 0, 0);
+		devcon->DrawIndexed(36, 0, 0);
+	}
+	else {
+		devcon->IASetVertexBuffers(0, 1, &pVBuffer2, &stride, &offset);
+		
+		devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		
+		devcon->UpdateSubresource(pCBuffer, 0, 0, &cBuffer, 0, 0);
+		devcon->Draw(modelSize, 0);
+	}
 
 	swapchain->Present(0, 0);
 }
@@ -250,6 +331,7 @@ void InitPipeline(void)
 		mbstowcs(wtext, buff, strlen(buff) + 1);
 		LPCWSTR myString = wtext;
 		MessageBox(HWND_DESKTOP, myString, L"Vertex Shader Error!", MB_OK);
+		CleanD3D();
 		exit(EXIT_FAILURE);
 	}
 	res = D3DX11CompileFromFile(L"PShader.hlsl", 0, 0, "PShader", "ps_5_0", 0, 0, 0, &PS, &PErrors, 0);
@@ -259,7 +341,8 @@ void InitPipeline(void)
 		wchar_t wtext[1000], wtext2[1000];
 		mbstowcs(wtext, buff, strlen(buff) + 1);
 		LPCWSTR myString = wtext;
-		MessageBox(HWND_DESKTOP, myString, L"Vertex Shader Error!", MB_OK);
+		MessageBox(HWND_DESKTOP, myString, L"Pixel Shader Error!", MB_OK);
+		CleanD3D();
 		exit(EXIT_FAILURE);
 	}
 
@@ -274,40 +357,87 @@ void InitPipeline(void)
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
-	res = dev->CreateInputLayout(ied, 4, VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
+	res = dev->CreateInputLayout(ied, 3, VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
 	if (res){
 		MessageBox(HWND_DESKTOP, L"Problem with setting input layout!", L"Input Layout Error!", MB_OK);
-		exit(EXIT_SUCCESS);
+		CleanD3D();
+		exit(EXIT_FAILURE);
 	}
 	devcon->IASetInputLayout(pLayout);
+
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(CBUFFER);				//This must ALWAYS be a multiple of 16. will throw an error if not.
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	HRESULT buffRes = dev->CreateBuffer(&bd, NULL, &pCBuffer);
+
+	if (buffRes)
+	{
+		MessageBox(HWND_DESKTOP, L"Problem creating constant buffer (size most likely not multiple of 16)!", L"CBuffer not created.", MB_OK);
+		CleanD3D();
+		exit(EXIT_FAILURE);
+	}
+
 }
 
 void InitGraphics(void)
 {
-	
-
 	//SET UP AND LOAD GEOMETRY HERE
 
 	//test triangle
-	VERTEX ourVerts[] = { { D3DXVECTOR4(0.0f, 0.5f, 0.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f), D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f) },
-	{ D3DXVECTOR4(0.45f, -0.5f, 0.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f), D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f) },
-	{ D3DXVECTOR4(-0.45f, -0.5f, 0.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f), D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f) }
+	VERTEX ourVerts[] = 
+	{	//Side1 of test cube
+		{ D3DXVECTOR4(-1.0f, -1.0, 1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, 1.0f), D3DXVECTOR2(0.0f, 0.0f)},
+		{ D3DXVECTOR4(1.0f, -1.0f, 1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, 1.0f), D3DXVECTOR2(0.0f, 0.0f)},
+		{ D3DXVECTOR4(-1.0f, 1.0f, 1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, 1.0f), D3DXVECTOR2(0.0f, 0.0f)},
+		{ D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, 1.0f), D3DXVECTOR2(0.0f, 0.0f)},
+		
+		//Side2 of test cube
+		{ D3DXVECTOR4(-1.0f, -1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, -1.0f), D3DXVECTOR2(0.0f, 0.0f)},
+		{ D3DXVECTOR4(-1.0f, 1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, -1.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, -1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, -1.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, 1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, 0.0f, -1.0f), D3DXVECTOR2(0.0f, 0.0f) },
+
+		//Side3 of test cube
+		{ D3DXVECTOR4(-1.0f, 1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(-1.0f, 1.0f, 1.0f, 1.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, 1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+	
+		//Side4 of test cube
+		{ D3DXVECTOR4(-1.0f, -1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, -1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, -1.0f, -1.0f, 1.0f), D3DXVECTOR3(0.0f, -1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(-1.0f, -1.0f, 1.0f, 1.0f), D3DXVECTOR3(0.0f, -1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, -1.0f, 1.0f, 1.0f), D3DXVECTOR3(0.0f, -1.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+
+		//Side5 of test cube
+		{ D3DXVECTOR4(1.0f, -1.0f, -1.0f, 1.0f), D3DXVECTOR3(1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, 1.0f, -1.0f, 1.0f), D3DXVECTOR3(1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, -1.0f, 1.0f, 1.0f), D3DXVECTOR3(1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(1.0f, 1.0f, 1.0f, 1.0f), D3DXVECTOR3(1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+
+		//Side6 of test cube
+		{ D3DXVECTOR4(-1.0f, -1.0f, -1.0f, 1.0f), D3DXVECTOR3(-1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(-1.0f, -1.0f, 1.0f, 1.0f), D3DXVECTOR3(-1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(-1.0f, 1.0f, -1.0f, 1.0f), D3DXVECTOR3(-1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) },
+		{ D3DXVECTOR4(-1.0f, 1.0f, 1.0f, 1.0f), D3DXVECTOR3(-1.0f, 0.0f, 0.0f), D3DXVECTOR2(0.0f, 0.0f) }
 	};
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 
 	bd.Usage = D3D11_USAGE_DYNAMIC;
-	bd.ByteWidth = sizeof(VERTEX) * 3;
+	bd.ByteWidth = sizeof(VERTEX) * 24;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 	dev->CreateBuffer(&bd, NULL, &pVBuffer);
-
 
 	D3D11_MAPPED_SUBRESOURCE ms;
 	devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);	//map our buffer to ms
@@ -319,6 +449,66 @@ void InitGraphics(void)
 
 	//TELL GPU HOW VERTICES WILL BE INPUT
 
+	DWORD OurIndices[] =
+	{
+		0, 1, 2,    // side 1
+		2, 1, 3,
+		4, 5, 6,    // side 2
+		6, 5, 7,
+		8, 9, 10,    // side 3
+		10, 9, 11,
+		12, 13, 14,    // side 4
+		14, 13, 15,
+		16, 17, 18,    // side 5
+		18, 17, 19,
+		20, 21, 22,    // side 6
+		22, 21, 23,
+	};
+
+	// create the index buffer
+	bd.Usage = D3D11_USAGE_DYNAMIC;
+	bd.ByteWidth = sizeof(DWORD)* 36;
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	bd.MiscFlags = 0;
+
+	dev->CreateBuffer(&bd, NULL, &pIBuffer);
+
+	devcon->Map(pIBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
+	memcpy(ms.pData, OurIndices, sizeof(OurIndices));                   // copy the data
+	devcon->Unmap(pIBuffer, NULL);
+
+
+	//test cube finished loading.
+
+	//Begin trying to load model.
+
+	Model *cube = new Model;
+
+	int result = cube->modelInit("dog.txt");
 	
+	if (result)
+	{
+		MessageBox(HWND_DESKTOP, L"Could not load model!", L"Model Load Error", MB_OK);
+		CleanD3D();
+		exit(EXIT_FAILURE);
+	}
+
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DYNAMIC;
+	bd.ByteWidth = sizeof(VERTEX) * cube->getSize();
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	dev->CreateBuffer(&bd, NULL, &pVBuffer2);
+
+	modelSize = cube->getSize();
+
+	devcon->Map(pVBuffer2, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);	//map our buffer to ms
+	memcpy(ms.pData, cube->vertices->_Myfirst, bd.ByteWidth);
+	devcon->Unmap(pVBuffer2, NULL);
+
+	delete cube;
 
 }

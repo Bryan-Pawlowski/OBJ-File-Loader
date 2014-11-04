@@ -8,7 +8,6 @@ struct VERTEX
 	D3DXVECTOR4 vert;
 	D3DXVECTOR3 norm;
 	D3DXVECTOR2 texCoords;
-	D3DXCOLOR color;
 };
 
 
