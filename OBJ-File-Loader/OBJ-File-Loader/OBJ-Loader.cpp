@@ -35,6 +35,7 @@ HRESULT Model::OBJParse(char* filename)
 	vector< D3DXVECTOR4 > vs;
 	vector< D3DXVECTOR3 > vns;
 	vector< D3DXVECTOR2 > vts;
+	vector< string > faces;
 
 
 	inFile.open(filename);
@@ -77,46 +78,52 @@ HRESULT Model::OBJParse(char* filename)
 		}
 		else if (token == f)
 		{
-			int vInd, tInd = 0, nInd = 0;
 
 
 			while (streamLine.good())
 			{
-				VERTEX vInfo;
 
 				string chunk;
 				string empty = "";  //this empty string is basically to cover the case where
-				char dummy;			//there is whitespace after the data.
 				streamLine >> chunk;
 
 				if (chunk == empty) continue;
 
-				istringstream streamChunk(chunk);
-
-				streamChunk >> vInd;
-				vInfo.vert = vs[vInd - 1];
-
-				streamChunk >> dummy;
-				if (vts.size() != 0){
-					streamChunk >> tInd;
-					vInfo.texCoords = vts[tInd - 1];
-				}
-
-				streamChunk >> dummy;
-				if (vns.size() != 0){
-					streamChunk >> nInd;
-					vInfo.norm = vns[nInd - 1];
-				}
-
-
-				vertices->push_back(vInfo);
-
+				faces.push_back(chunk);
 			}
 		}
 
 		
 	}
 
+	int i;
+
+	for (i = 0; i < faces.size(); i++)
+	{
+
+		VERTEX vInfo;
+		int vInd, tInd = 0, nInd = 0;
+		char dummy;			//there is whitespace after the data.
+		istringstream streamChunk(faces[i]);
+
+		streamChunk >> vInd;
+		vInfo.vert = vs[vInd - 1];
+
+		streamChunk >> dummy;
+		if (vts.size() != 0){
+			streamChunk >> tInd;
+			vInfo.texCoords = vts[tInd - 1];
+		}
+
+		streamChunk >> dummy;
+		if (vns.size() != 0){
+			streamChunk >> nInd;
+			vInfo.norm = vns[nInd - 1];
+		}
+
+
+		vertices->push_back(vInfo);
+	}
 
 
 	inFile.close();

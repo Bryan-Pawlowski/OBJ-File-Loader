@@ -17,11 +17,16 @@ VOut VShader(float4 position : POSITION, float3 normal : NORMAL)
 {
 	VOut output;
 
+	position.w = lightvec.w;
+
 	output.position = mul(final, position);
 	output.color = ambientcol;
 	
+	float4 lvec = lightvec;
+		lvec.w = 0;
+
 	float4 norm = normalize(mul(rotation, normal));
-	float diffuse = saturate(dot(norm, lightvec));
+	float diffuse = saturate(dot(norm, lvec));
 
 	output.color += lightcol * diffuse;
 

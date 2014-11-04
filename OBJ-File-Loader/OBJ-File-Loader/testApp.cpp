@@ -25,6 +25,7 @@ IDXGISwapChain *swapchain;
 ID3D11Device *dev;
 ID3D11DeviceContext *devcon;
 ID3D11RenderTargetView *backbuffer;
+ID3D11DepthStencilView *zbuffer;
 ID3D11VertexShader * pVS;
 ID3D11PixelShader * pPS;
 ID3D11Buffer *pVBuffer;
@@ -35,6 +36,7 @@ ID3D11Buffer *pVBuffer2;
 
 bool modelTest = false;
 unsigned int modelSize;
+float modelScale = 1.0f;
 
 //prototypes
 void createModelTests(void);
@@ -159,6 +161,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				case 's':
 					modelTest = !modelTest;
 					break;
+				case 'v':
+					modelScale -= .01f;
+					break;
+				case 'b':
+					modelScale += .01f;
+					break;
 				default:
 					break;
 			}
@@ -220,13 +228,36 @@ void InitD3D(HWND hWnd)
 		NULL,
 		&devcon);
 
+	D3D11_TEXTURE2D_DESC texd;
+	ZeroMemory(&texd, sizeof(texd));
+
+	texd.Width = SCREEN_WIDTH;
+	texd.Height = SCREEN_HEIGHT;
+	texd.ArraySize = 1;
+	texd.MipLevels = 1;
+	texd.SampleDesc.Count = 4;
+	texd.Format = DXGI_FORMAT_D32_FLOAT;
+	texd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	ID3D11Texture2D * pDepthBuffer;
+	dev->CreateTexture2D(&texd, NULL, &pDepthBuffer);
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
+	ZeroMemory(&dsvd, sizeof(dsvd));
+
+	dsvd.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+
+	dev->CreateDepthStencilView(pDepthBuffer, &dsvd, &zbuffer);
+	pDepthBuffer->Release();
+
 	ID3D11Texture2D *pBackBuffer;
 	swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
 	dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer);
 	pBackBuffer->Release();
 
-	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+	devcon->OMSetRenderTargets(1, &backbuffer, zbuffer);
 
 
 	D3D11_VIEWPORT viewport;
@@ -236,6 +267,8 @@ void InitD3D(HWND hWnd)
 	viewport.TopLeftY = 0;
 	viewport.Width = SCREEN_WIDTH;
 	viewport.Height = SCREEN_HEIGHT;
+	viewport.MinDepth = 0;
+	viewport.MaxDepth = 1;
 
 	devcon->RSSetViewports(1, &viewport);
 }
@@ -266,7 +299,7 @@ void RenderFrame(void)
 	static float Time = 0.0f;
 	Time += 0.0003f;
 
-	cBuffer.LightVector = D3DXVECTOR4(0.75f, 0.5f, 1.0f, 0.0f);
+	cBuffer.LightVector = D3DXVECTOR4(0.75f, 0.5f, 1.0f, modelScale);
 	cBuffer.LightColor = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
 	cBuffer.AmbientColor = D3DXCOLOR(0.2f, 0.2f, 0.2f, 1.0f);
 
@@ -294,6 +327,7 @@ void RenderFrame(void)
 	devcon->VSSetConstantBuffers(0, 1, &pCBuffer);
 
 	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+	devcon->ClearDepthStencilView(zbuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
