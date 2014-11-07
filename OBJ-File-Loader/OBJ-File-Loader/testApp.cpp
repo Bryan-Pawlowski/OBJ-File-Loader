@@ -519,7 +519,7 @@ void InitGraphics(void)
 
 	Model *cube = new Model;
 
-	int result = cube->modelInit("dog.txt");
+	int result = cube->modelInit("dog.txt"); //REPLACE THIS FILENAME WITH ANY .OBJ FILE YOU WISH TO USE.
 	
 	if (result)
 	{
