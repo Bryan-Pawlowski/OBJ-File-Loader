@@ -16,4 +16,10 @@
       <Folder Include="GfxPrograms\ShaderWindow" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="..\readme.md">
+        <Link>readme.md</Link>
+      </Content>
+    </ItemGroup>
+
 </Project>
