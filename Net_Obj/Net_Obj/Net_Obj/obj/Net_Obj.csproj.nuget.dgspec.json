@@ -1,0 +1,83 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\GitRepos\\OBJ-File-Loader\\Net_Obj\\Net_Obj\\Net_Obj\\Net_Obj.csproj": {}
+  },
+  "projects": {
+    "D:\\GitRepos\\OBJ-File-Loader\\Net_Obj\\Net_Obj\\Net_Obj\\Net_Obj.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\GitRepos\\OBJ-File-Loader\\Net_Obj\\Net_Obj\\Net_Obj\\Net_Obj.csproj",
+        "projectName": "Net_Obj",
+        "projectPath": "D:\\GitRepos\\OBJ-File-Loader\\Net_Obj\\Net_Obj\\Net_Obj\\Net_Obj.csproj",
+        "packagesPath": "C:\\Users\\Bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\GitRepos\\OBJ-File-Loader\\Net_Obj\\Net_Obj\\Net_Obj\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "c:\\program files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\Bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Veldrid": {
+              "target": "Package",
+              "version": "[4.8.0, )"
+            },
+            "Veldrid.ImGui": {
+              "target": "Package",
+              "version": "[5.72.0, )"
+            },
+            "Veldrid.SPIRV": {
+              "target": "Package",
+              "version": "[1.0.14, )"
+            },
+            "Veldrid.StartupUtilities": {
+              "target": "Package",
+              "version": "[4.8.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "c:\\program files\\dotnet\\sdk\\5.0.201\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
