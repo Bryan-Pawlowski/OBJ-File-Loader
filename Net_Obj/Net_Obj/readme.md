@@ -1,4 +1,4 @@
-#VeldridMan
+# VeldridMan
 
 Veldrid is a super sweet c# graphics toolset which hastens the setup time for a graphics project. At least, that is my
 one-sentence synopsys. I am using it to re-create a learning tool I had in college called GLMan, developed by 
